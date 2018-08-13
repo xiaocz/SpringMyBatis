@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>  
+<!DOCTYPE mapper  
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+<mapper namespace="CN_NOOTBOOK_MAPPING">  
+	
+	<select id="findNotebooks" resultMap="notebookMapping">
+		select 
+			cn_notebook_id
+			,cn_user_id
+			,cn_notebook_type_id
+			,cn_notebook_name
+			,cn_notebook_desc
+			,cn_notebook_createtime
+		from 
+			cn_notebook
+	</select>
+	
+	<select id="findNotebookListByName" parameterType="hashmap" resultMap="notebookMapping">
+		select 
+			cn_notebook_id
+			,cn_user_id
+			,cn_notebook_type_id
+			,cn_notebook_name
+			,cn_notebook_desc
+			,cn_notebook_createtime
+		from 
+			cn_notebook
+		where 
+<!-- 			cn_notebook_name like '%${cnNotebookName}%' -->
+			cn_notebook_name like CONCAT('%', #{cnNotebookName},'%')
+<!-- 			模糊查询的条件连接方式 						-->
+<!-- 			cn_notebook_name like CONCAT(CONCAT('%', #{cnNotebookName}),'%') -->
+			
+			
+	</select>
+ 	<!-- resultMap解决属性名与字段名不一致  -->
+ 	<resultMap type="com.bocom.bean.NoteBook" id="notebookMapping">
+ 		<id property="cnNotebookId" column="cn_notebook_id" jdbcType="VARCHAR"/>
+ 		<result property="cnUserId" column="cn_user_id" jdbcType="VARCHAR"/>
+ 		<result property="cnNotebookTypeId" column="cn_notebook_type_id" jdbcType="VARCHAR"/>
+ 		<result property="cnNotebookName" column="cn_notebook_name" jdbcType="VARCHAR"/>
+ 		<result property="cnNotebookDesc" column="cn_notebook_desc" jdbcType="VARCHAR"/>
+ 		<result property="cnNotebookCreatetime" column="cn_notebook_createtime" jdbcType="TIMESTAMP"/>
+ 	</resultMap>
+</mapper>  

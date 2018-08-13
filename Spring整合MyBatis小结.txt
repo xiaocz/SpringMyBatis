@@ -1,0 +1,146 @@
+基于Spring和MyBatis技术开发的主要步骤如下：
+	1.创建工程，搭建SpringMVC和MyBatis开发环境
+	2.基于MapperScannerConfigurer方式整合MyBatis的Mapper接口（推荐）
+	3.编写和配置SpringMVC的主要组件，如Controller、HandlerMapping、ViewResolver等
+	4.别写JSP视图组件，利用标签和表达式显示模型数据
+	5.测试程序
+	
+详细：
+
+1.如何搭建SpringMVC和MyBatis开发环境?
+	创建一个Web工程
+	添加MyBatis相关技术环境
+		1.引入数据库驱动包和MyBatis开发包
+		2.引入DBCP/C3P0连接池开发包
+	添加SpringMVC相关技术环境
+		1.引入Spring Ioc，jdbc，tx等支持的开发包
+		2.引入Spring webmvc支持的开发包
+		3.在src下添加applicationContext.xml配置文件
+		4.web.xml中配置DispatcherServlet前端控制器
+	引入MyBatis和Spring整合的开发包mybatis-spring.jar
+	
+2.如何基于MapperScannerConfigurer方式整合MyBatis的Mapper接口?
+	根据数据库编写实体类
+	编写Mapper映射文件，在XML中编写SQL操作的定义
+	编写Mapper接口，定义SQL操作方法
+	在Spring配置文件中定义如下Bean：
+		DataSource
+		SqlSessionFactoryBean
+		MapperScannerConfigurer
+	测试Spring容器的Dao组件
+		
+3.如何编写和配置SpringMVC的主要组件?
+	编写Controller和请求处理方法
+	配置<mvc:annotation-driven />,支持@RequestMapping
+	配置Controller组件
+		开启组件扫描，将Controller扫描到Spring容器
+		需要Dao时采用注入方式使用
+		请求处理方法上使用@RequestMapping指定对应的请求
+	配置ViewResolver组件
+	
+	
+4.JSP页面
+	使用jstl标签库，需引入相关开发包
+	JSP可以使用el表达式
+	JSP可以使用SpringMVC表单标签
+	
+	
+备注：几个需要注意的地方
+	配置SqlSessionFactoryBean的时候，参数如下：
+		dataSource：用于指定连接数据库的数据源（必要属性）
+		mapperLocations：用于指定Mapper文件存放的位置
+		configLocation：用于指定MyBatis配置文件的位置。如果指定了该属性，
+			那么会以该配置文件的内容作为配置信息构建对应的SqlSessionFactoryBuilder，
+			但是后续属性指定的内容会覆盖该配置文件里面指定的内容
+		typeAlisesPackage：它一般对应于我们的实体类所在的包，这个时候会自动取对应包中不包括包名的简单类名
+			作为包括包括包名的别名。多个package可以用逗号或者分号来分隔
+		typeAlises：数组类型，用来指定别名。指定了这个属性之后，MyBatis会把这个类型的短名称作为这个类型的别名
+	例如：
+	指定configLocation属性，然后在classpath:configuration.xml里面配置Mapper信息：
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="configLocation" value="classpath:configuration.xml"/>
+	</bean>
+	
+	或者：直接指定mapperLocations属性：MyBatis会找到对应包下的*.xml：
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+			<property name="dataSource" ref="dataSource"/>
+			<property name="mapperLocations" value="config/mapper/*.xml"/>
+	</bean>
+	
+
+
+获取Mapper接口实例的方式：
+
+方式一：通过MapperFactoryBean
+	MapperFactoryBean的作用是根据Mapper接口获取我们想要的Mapper对象，它封装了原有的session.getMapper()
+	的功能实现。
+	定义MapperFactoryBean时，需要以下两个属性：
+		1.SqlSessionFactoryBean对象，用于提供SqlSession
+		2.要返回的Mapper对象的Mapper接口
+	<!-- 	============利用Spring生成Mapper实例 ============= -->
+	<!-- 	MapperFactoryBean：用于创建Mapper接口的工厂实例 	 -->
+	<!-- 	mapperInterface  ：指定Mapper接口类型			 	 -->
+	<bean id="deptMapper" 
+			class="org.mybatis.spring.mapper.MapperFactoryBean">
+		<property name="mapperInterface" value="com.bocom.dao.mapper.DeptMapper"/>
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"/>
+	</bean>
+	
+方式二：通过MapperScannnerConfigurer
+	2.1 全部扫描
+	只需要指定一个basePackage属性即可---用于指定Mapper接口所在的包，此包及子包下的所有Mapper接口都将被搜索到，
+	并把他们注册为一个个MapperFactoryBean对象。多个包之间用逗号或者分号分隔。
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="config.mapper"/>
+	</bean>
+	注：sqlSessionFactoryBean属性可以不用指定，会以Autowired方式自动注入。
+	
+	2.2 缩小扫描范围（annotationClass和markerInterface）
+	annotationClass：用于指定一个注解标记，当指定了annotationClass时，
+		MapperScannnerConfigurer将只注册使用了annotationClass注解标记的Mapper接口
+	markerInterface：用于指定一个接口，当指定了markerInterface时，
+		MapperScannnerConfigurer将只注册继承了markerInterface接口的Mapper接口
+	例：annotationClass方式
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+	<property name="basePackage" value="config.mapper"/>
+	<property name="annotationClass" value="com.bocom.annotation.MyBatisRepository"/>
+	</bean>
+	同样：sqlSessionFactoryBean属性可以不用指定，会以Autowired方式自动注入。
+
+方式三：通过sqlSessionTemplate
+	将sqlSessionTemplate组件注入给Dao的实现类，在Dao中利用sqlSessionTemplate编程
+	
+	<!-- 定义SqlSessionTemplate -->
+	<bean id="sqlSessionTemplate" class="org.mybatis.spring.SqlSessionTemplate">
+		<constructor-arg index="0" ref="sqlSessionFactory" />
+	</bean>
+	<!-- 自动组件扫描功能,扫描DAO并注入sqlSessionTemplate -->
+	<context:component-scan base-package="com.bocom.dao"/>
+	----该句的作用：自动扫描加了注解的组件，并生成相应的Bean对象（Bean对象的id为默认类名首字母小写）
+		@Component通用注解、@Name通用注解、
+		@Repository持久层组件注解、@Service业务层组件注解、
+		@Controller控制层组件注解
+	
+		自动组件扫描功能会扫描 base-package（com.bocom.dao）下的所有加了注解的类（组件），
+			并生成相应的Bean对象，Bean对象的id为默认类名首字母小写。
+		此例中扫描的是 加了@Repository注解的实现类Impl，而实现类的Bean属性通过Autowired方式注入
+		private SqlSessionTemplate sqlSessionTemplate;
+		@Autowired
+		public void setSqlSessionTemplate(SqlSessionTemplate sqlSessionTemplate) {
+			this.sqlSessionTemplate = sqlSessionTemplate;
+		}
+		SqlSessionTemplate实例在xml文件中配置由Spring生成。
+		DaoImpl注入了SqlSessionTemplate实例后，就可以运用其进行编程了。
+		思考：也可以用此方式注入SqlSession实例吧?
+	详见例：testTemplateFindNoteBooks()
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	

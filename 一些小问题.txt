@@ -1,0 +1,6 @@
+用sqlSession进行编程，在模糊查询的时候，
+	模糊查询条件这样写的时候，where cn_notebook_name like '%${cnNotebookName}%'
+	parameterType不能用java.lang.String，
+	会报错，There is no getter for property named 'cnNotebookName' in 'class java.lang.String'
+	改成parameterType="hashmap" 就行，参数放到hashMap中。
+	详见：com.bocom.test.TestCase.test模糊查询()
